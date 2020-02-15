@@ -17,7 +17,7 @@
   products from Adafruit!
 
   Written by Limor Fried/Ladyada for Adafruit Industries.  
-  BSD license, all text above must be included in any redistribution
+  BSD license, all text above must be included in any redistributionq
  ****************************************************/
 
 #include <Wire.h> // Enable this line if using Arduino Uno, Mega, etc.
@@ -26,16 +26,37 @@
 
 Adafruit_7segment matrix = Adafruit_7segment();
 
+int ToggleButton = 2;
+int StartButton = 3;
+int ToggleButtonRead = 0;
+int StartButtonRead = 0;
+
+
+
 void setup() {
 #ifndef __AVR_ATtiny85__
   Serial.begin(9600);
   Serial.println("7 Segment Backpack Test");
 #endif
   matrix.begin(0x70);
-
-pinMode(2, INPUT);
-pinMode(3, INPUT);
+  pinMode(ToggleButton, INPUT_PULLUP);
+  pinMode(StartButton, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(ToggleButton), ToggleHandler, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(StartButton), StartHandler, CHANGE);
 }
+
+
+void ToggleHandler() {
+  matrix.print(0xBEFF, HEX);
+  matrix.writeDisplay();
+}
+
+void StartHandler() {
+  matrix.print(0xDEAD, HEX);
+  matrix.writeDisplay();
+}
+
+
 
 void loop() {
   // try to print a number thats too long
@@ -49,31 +70,28 @@ void loop() {
   delay(500);
 
   // print a floating point 
-  matrix.print(12.34);
+  matrix.print(12.56);
   matrix.writeDisplay();
   delay(500);
-
-int val = digitalRead(3)
   
-while (flag) {
-  uint16_t blinkcounter = 0;
-  boolean drawDots = false;
-  for (uint16_t counter = 3600; counter > 0; counter --) {
-    matrix.writeDigitNum(0, (counter / 600), drawDots);
-    matrix.writeDigitNum(1, (counter / 60) % 10, drawDots);
-    matrix.drawColon(drawDots);
-    matrix.writeDigitNum(3, (counter / 10) % 6, drawDots);
-    matrix.writeDigitNum(4, counter % 10, drawDots);
-   
-    blinkcounter+=50;
-    if (blinkcounter < 500) {
-      drawDots = false;
-    } else if (blinkcounter < 1000) {
-      drawDots = true;
-    } else {
-      blinkcounter = 0;
-    }
-    matrix.writeDisplay();
-    delay(1000);
+    uint16_t blinkcounter = 0;
+    boolean drawDots = false;
+    for (uint16_t counter = 3600; counter > 0; counter --) {
+      matrix.writeDigitNum(0, (counter / 600), drawDots);
+      matrix.writeDigitNum(1, (counter / 60) % 10, drawDots);
+      matrix.drawColon(drawDots);
+      matrix.writeDigitNum(3, (counter / 10) % 6, drawDots);
+      matrix.writeDigitNum(4, counter % 10, drawDots);
+     
+      blinkcounter+=50;
+      if (blinkcounter < 500) {
+        drawDots = false;
+      } else if (blinkcounter < 1000) {
+        drawDots = true;
+      } else {
+        blinkcounter = 0;
+      }
+      matrix.writeDisplay();
+      delay(1000);
   }
 }

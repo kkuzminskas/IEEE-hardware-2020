@@ -30,7 +30,9 @@ int ToggleButton = 2;
 int StartButton = 3;
 int ToggleButtonRead = 0;
 int StartButtonRead = 0;
-
+volatile byte start = true;
+volatile byte toggle = false;
+int count = 0;
 
 
 void setup() {
@@ -41,22 +43,32 @@ void setup() {
   matrix.begin(0x70);
   pinMode(ToggleButton, INPUT_PULLUP);
   pinMode(StartButton, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(ToggleButton), ToggleHandler, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(StartButton), StartHandler, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ToggleButton), ToggleHandler, RISING);
+  attachInterrupt(digitalPinToInterrupt(StartButton), StartHandler, RISING);
+ 
 }
 
 
+// handles the increments
 void ToggleHandler() {
-  matrix.print(0xBEFF, HEX);
-  matrix.writeDisplay();
+  count += 300;
+  toggle = true;
+  start = false;
 }
 
+//starts and in the future might pause the timer if we so require
 void StartHandler() {
-  matrix.print(0xDEAD, HEX);
-  matrix.writeDisplay();
+  if (start == true){ start == false;
+  }
+  else {
+  start = true;
+  toggle = false;
+  }
 }
 
 
+/*Important ::this code counts up to 100 minutes!!then goes into hexadecimal, this might need to be fixed
+ * depending on what we want it to count up to. Should be a couple if statements.*/
 
 void loop() {
   // try to print a number thats too long
@@ -64,24 +76,52 @@ void loop() {
   matrix.writeDisplay();
   delay(500);
 
-  // print a hex number
-  matrix.print(0xBEEF, HEX);
-  matrix.writeDisplay();
-  delay(500);
+  // print the set time at the begining if the user has entered input
+  if (toggle == true){
+    boolean drawDots = false;
+    uint16_t countin = count;
+    matrix.writeDigitNum(0, (countin/600),drawDots );
+    matrix.writeDigitNum(1, (countin/60)%10, drawDots);
+    matrix.drawColon(drawDots);
+    matrix.writeDigitNum(3, (countin/10)%6, drawDots);
+    matrix.writeDigitNum(4, countin%10, drawDots);
+     matrix.writeDisplay();
+     delay(1000);
+//  matrix.print(0xBEEF, HEX);
+//  matrix.writeDisplay();
+//  delay(500);
+  }
 
-  // print a floating point 
-  matrix.print(12.56);
-  matrix.writeDisplay();
-  delay(500);
-  
+//i
+ else{ // print 00:00 time if the count is at 0
+  if (count == 0){
+    boolean drawDots = false;
+    uint16_t countin = count;
+    matrix.writeDigitNum(0, (countin/600),drawDots );
+    matrix.writeDigitNum(1, (countin/60)%10, drawDots);
+    matrix.drawColon(drawDots);
+    matrix.writeDigitNum(3, (countin/10)%6, drawDots);
+    matrix.writeDigitNum(4, countin%10, drawDots);
+    matrix.writeDisplay();
+    delay(1000);
+    }
+//  matrix.print(00.00);
+//  matrix.writeDisplay();
+//  delay(1000);
+ 
+  //count down the time
     uint16_t blinkcounter = 0;
     boolean drawDots = false;
-    for (uint16_t counter = 3600; counter > 0; counter --) {
+    for (uint16_t counter = count; counter > 0; counter --) {
+      if (toggle == true){
+        return;
+      }
       matrix.writeDigitNum(0, (counter / 600), drawDots);
       matrix.writeDigitNum(1, (counter / 60) % 10, drawDots);
       matrix.drawColon(drawDots);
       matrix.writeDigitNum(3, (counter / 10) % 6, drawDots);
       matrix.writeDigitNum(4, counter % 10, drawDots);
+
      
       blinkcounter+=50;
       if (blinkcounter < 500) {
@@ -93,5 +133,6 @@ void loop() {
       }
       matrix.writeDisplay();
       delay(1000);
+  }
   }
 }
